@@ -10,6 +10,6 @@
             set => _isSynchronizerRunning = value;
         }
 
-        public int MyProperty { get; set; }
+        public string SynchronizerJobID { get; set; }
     }
 }
