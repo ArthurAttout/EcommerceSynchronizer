@@ -20,5 +20,11 @@ namespace EcommerceSynchronizer.Utilities
         //Hiboutik
         public string EmailAddress { get; set; }
         public string AccountName { get; set; }
+
+        //Lightspeed
+        public string RefreshToken { get; set; }
+        public string AccountID { get; set; }
+        public string ClientID { get; set; }
+        public string ClientSecret { get; set; }
     }
 }

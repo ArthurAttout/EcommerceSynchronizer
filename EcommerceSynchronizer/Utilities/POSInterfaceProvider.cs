@@ -23,15 +23,22 @@ namespace EcommerceSynchronizer.Model
                 switch (posCfg.Type)
                 {
                     case EnumPOSTypes.SQUAREPOS:
-                        _posInterfaces.Add(new SquarePOS(posCfg.AccessToken, posCfg.Locations));
+                        _posInterfaces.Add(new SquarePOS(posCfg.AccessToken, 
+                            posCfg.AccountID));
                         break;
 
                     case EnumPOSTypes.HIBOUTIK:
-                        _posInterfaces.Add(new HiboutikPOS(posCfg.AccessToken,posCfg.EmailAddress,posCfg.AccountName));
+                        _posInterfaces.Add(new HiboutikPOS(posCfg.AccessToken,
+                            posCfg.EmailAddress,
+                            posCfg.AccountName));
                         break;
                         
                     case EnumPOSTypes.LIGHTSPEED:
-                        _posInterfaces.Add(new LightspeedPOS(posCfg.AccessToken));
+                        _posInterfaces.Add(new LightspeedPOS(posCfg.AccessToken,
+                            posCfg.RefreshToken,
+                            posCfg.ClientID,
+                            posCfg.ClientSecret,
+                            posCfg.AccountID));
                         break;
 
                     default:

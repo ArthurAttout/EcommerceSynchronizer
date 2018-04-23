@@ -1,4 +1,6 @@
-﻿namespace EcommerceSynchronizer.Model
+﻿using EcommerceSynchronizer.Controllers;
+
+namespace EcommerceSynchronizer.Model
 {
     public class Object
     {
@@ -12,5 +14,9 @@
         public string EcommerceID { get; set; }
 
         public int Quantity { get; set; }
+
+        public IPOSInterface POS { get; set; }
+
+        public string Name { get; set; }
     }
 }

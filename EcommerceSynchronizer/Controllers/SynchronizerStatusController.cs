@@ -58,7 +58,7 @@ namespace EcommerceSynchronizer.Controllers
         public string PostForceUpdate()
         {
 
-            _synchronizer.UpdateFromTimeout();
+            BackgroundJob.Enqueue(() => _synchronizer.UpdateFromTimeout());
             return "updated";
         }
 

@@ -10,8 +10,10 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public HiboutikPOS(string accessToken, string emailAddress, string accountName)
         {
-
+            AccountID = accountName;
         }
+
+        public string AccountID { get; set; }
 
         public bool AdjustQuantityOfProduct(string productId, int delta)
         {
@@ -31,6 +33,11 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
         public bool CanMakeRequest()
         {
             return _maximumRequest > requests;
+        }
+
+        public void RefreshToken()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

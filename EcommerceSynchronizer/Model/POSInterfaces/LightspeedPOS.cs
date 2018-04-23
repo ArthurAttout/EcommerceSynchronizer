@@ -1,5 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Web;
 using EcommerceSynchronizer.Controllers;
+using EcommerceSynchronizer.Model.POSInterfaces.LightspeedPOSBindingModel;
+using EcommerceSynchronizer.Model.POSInterfaces.SquarePOSBindingModel;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 
 namespace EcommerceSynchronizer.Model.POSInterfaces
 {
@@ -7,9 +18,18 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
     {
         public string AccesssToken { get; set; }
         public string RefreshToken { get; set; }
+        public DateTime DateTokenExpiration { get; set; }
+        public string ClientID { get; set; }
+        public string AccountID { get; set; }
+        public string ClientSecret { get; set; }
 
-        public LightspeedPOS(string accessToken, string refreshToken)
+        public LightspeedPOS(string accessToken, string refreshToken, string clientID, string clientSecret, string accountId)
         {
+            AccesssToken = accessToken;
+            RefreshToken = refreshToken;
+            AccountID = accountId;
+            ClientID = clientID;
+            ClientSecret = clientSecret;
         }
 
         public bool AdjustQuantityOfProduct(string productId, int delta)
@@ -24,12 +44,75 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public IList<Object> GetAllProducts()
         {
-            throw new System.NotImplementedException();
+            var returnList = new List<Object>();
+            
+            var request = WebRequest.Create($"https://api.lightspeedapp.com/API/Account/{AccountID}/Item.json?load_relations=[\"ItemShops\"]");
+
+            var headers = new WebHeaderCollection
+            {
+                {HttpRequestHeader.ContentType, "application/json"},
+                {HttpRequestHeader.Authorization, $"Bearer {AccesssToken}"},
+                {HttpRequestHeader.Accept, "application/json"}
+            };
+            request.Headers = headers;
+            var response = request.GetResponse();
+            var dataStream = response.GetResponseStream();
+            if (dataStream != null)
+            {
+                var reader = new StreamReader(dataStream);
+                var responseJSON = reader.ReadToEnd();
+                var list = JsonConvert.DeserializeObject<ItemListBindingModel>(responseJSON);
+                foreach (var itemInventory in list.Item)
+                {
+                    returnList.Add(new Object()
+                    {
+                        PosID = itemInventory.itemID,
+                        Quantity = int.Parse(itemInventory.ItemShops.ItemShop.ElementAt(0).qoh), //TODO handle multiple shops
+                        POS = this,
+                        Name = itemInventory.description
+                    });
+                }
+            }
+            
+
+            return returnList;
         }
 
         public bool CanMakeRequest()
         {
-            throw new System.NotImplementedException();
+            return (DateTokenExpiration > DateTime.Now);
+        }
+
+        void IPOSInterface.RefreshToken()
+        {
+            var request = WebRequest.Create("https://cloud.lightspeedapp.com/oauth/access_token.php");
+            request.Method = "POST";
+            request.ContentType = "application/x-www-form-urlencoded";
+
+            var outgoingQueryString = HttpUtility.ParseQueryString(String.Empty);
+            outgoingQueryString.Add("refresh_token", RefreshToken);
+            outgoingQueryString.Add("client_id", ClientID);
+            outgoingQueryString.Add("client_secret", ClientSecret);
+            outgoingQueryString.Add("grant_type", "refresh_token");
+
+            var postdata = outgoingQueryString.ToString();
+
+            var byteArray = Encoding.UTF8.GetBytes(postdata);
+            request.ContentLength = byteArray.Length;
+            var dataStream = request.GetRequestStream();
+            dataStream.Write(byteArray, 0, byteArray.Length);
+            dataStream.Close();
+
+            var response = request.GetResponse();
+            dataStream = response.GetResponseStream();
+            if (dataStream == null)
+                throw new SecurityTokenException("Could not refresh token for client " + ClientID);
+
+            var reader = new StreamReader(dataStream);
+            var responseJSON = reader.ReadToEnd();
+            var accessTokenModel = JsonConvert.DeserializeObject<AccessTokenBindingModel>(responseJSON);
+            DateTokenExpiration = DateTime.Now.AddSeconds(accessTokenModel.ExpiresIn);
+            AccesssToken = accessTokenModel.AccessToken;
         }
     }
 }

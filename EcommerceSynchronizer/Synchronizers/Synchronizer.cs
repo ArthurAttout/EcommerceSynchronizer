@@ -24,10 +24,19 @@ namespace EcommerceSynchronizer.Synchronizers
 
         public void UpdateFromTimeout()
         {
-            foreach(var posInterface in _posInterfaceProvider.GetAllInterfaces())
+            foreach(var posInterface in _posInterfaceProvider .GetAllInterfaces())
             {
-                if(posInterface.CanMakeRequest())
+                if (posInterface.CanMakeRequest())
+                {
                     _ecommerceDatabase.UpdateAllProducts(posInterface.GetAllProducts());
+                }
+                else
+                {
+                    posInterface.RefreshToken();
+                    if(posInterface.CanMakeRequest())
+                        _ecommerceDatabase.UpdateAllProducts(posInterface.GetAllProducts());
+                }
+                    
             }
         }
 
