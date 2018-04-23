@@ -9,6 +9,7 @@ using EcommerceSynchronizer.Model.Interfaces;
 using EcommerceSynchronizer.Synchronizers;
 using EcommerceSynchronizer.Utilities;
 using Hangfire;
+using Hangfire.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -42,6 +43,7 @@ namespace EcommerceSynchronizer
             services.AddSingleton<IPOSInterfaceProvider>(new POSInterfaceProvider(cfg));
             services.AddSingleton<IEcommerceDatabase>(new EcommerceDatabase(Configuration["ecommerceDatabaseConnectionString"]));
             services.AddHangfire(x => x.UseSqlServerStorage(Configuration["hangfireDatabaseConnectionString"]));
+
         }
 
         private void createMapping(IMapperConfigurationExpression cfg)
@@ -61,6 +63,13 @@ namespace EcommerceSynchronizer
             
             app.UseHangfireDashboard();
             app.UseHangfireServer();
+            using (var connection = JobStorage.Current.GetConnection())
+            {
+                foreach (var recurringJob in connection.GetRecurringJobs())
+                {
+                    RecurringJob.RemoveIfExists(recurringJob.Id);
+                }
+            }
         }
     }
 

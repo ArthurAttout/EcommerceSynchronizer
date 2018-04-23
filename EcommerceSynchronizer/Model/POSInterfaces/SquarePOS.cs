@@ -33,6 +33,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public IList<Object> GetAllProducts()
         {
+            var returnList = new List<Object>();
             foreach (var location in _locations)
             {
                 var request = WebRequest.Create($"http://connect.squareup.com/v1/{location}/inventory");
@@ -51,7 +52,6 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
                     var reader = new StreamReader(dataStream);
                     var responseJSON = reader.ReadToEnd();
                     var list = JsonConvert.DeserializeObject<List<ItemInventory>>(responseJSON);
-                    var returnList = new List<Object>();
                     foreach (var itemInventory in list)
                     {
                         returnList.Add(new Object()
@@ -63,7 +63,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
                 }
             }
 
-            return null;
+            return returnList;
         }
 
         public bool CanMakeRequest()

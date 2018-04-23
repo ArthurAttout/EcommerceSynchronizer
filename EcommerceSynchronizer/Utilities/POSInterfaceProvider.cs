@@ -31,7 +31,8 @@ namespace EcommerceSynchronizer.Model
                         break;
                         
                     case EnumPOSTypes.LIGHTSPEED:
-                        throw new NotImplementedException();
+                        _posInterfaces.Add(new LightspeedPOS(posCfg.AccessToken));
+                        break;
 
                     default:
                         throw new ArgumentOutOfRangeException();

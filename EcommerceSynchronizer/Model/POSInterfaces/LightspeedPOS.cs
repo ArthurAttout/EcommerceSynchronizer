@@ -3,14 +3,13 @@ using EcommerceSynchronizer.Controllers;
 
 namespace EcommerceSynchronizer.Model.POSInterfaces
 {
-    public class HiboutikPOS : IPOSInterface
+    public class LightspeedPOS : IPOSInterface
     {
-        private int _maximumRequest = 10000;
-        private int requests;
+        public string AccesssToken { get; set; }
+        public string RefreshToken { get; set; }
 
-        public HiboutikPOS(string accessToken, string emailAddress, string accountName)
+        public LightspeedPOS(string accessToken, string refreshToken)
         {
-
         }
 
         public bool AdjustQuantityOfProduct(string productId, int delta)
@@ -25,12 +24,12 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public IList<Object> GetAllProducts()
         {
-            return new List<Object>();
+            throw new System.NotImplementedException();
         }
 
         public bool CanMakeRequest()
         {
-            return _maximumRequest > requests;
+            throw new System.NotImplementedException();
         }
     }
 }
