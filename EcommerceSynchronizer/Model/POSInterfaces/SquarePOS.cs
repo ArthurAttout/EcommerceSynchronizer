@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using EcommerceSynchronizer.Controllers;
+using EcommerceSynchronizer.Model.POSInterfaces.LightspeedPOSBindingModel;
 using EcommerceSynchronizer.Model.POSInterfaces.SquarePOSBindingModel;
 using Flurl.Http;
 using Newtonsoft.Json;
@@ -23,9 +24,19 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public string AccountID { get; set; }
 
-        public bool AdjustQuantityOfProduct(string productId, int quantitySold, int balance)
+        public bool AdjustQuantityOfProduct(string variationID, int quantitySold, int balance)
         {
-            throw new System.NotImplementedException();
+            var updateBindingModel = new UpdateItemBindingModel()
+            {
+                QuantityDelta = -quantitySold,
+                AdjustmentType = "SALE"
+            };
+
+            var response = $"https://connect.squareup.com/v1/{AccountID}/inventory/{variationID}"
+                .WithHeader("Authorization", $"Bearer {AccessToken}")
+                .PostJsonAsync(updateBindingModel).Result;
+
+            return response.IsSuccessStatusCode;
         }
 
         public void UpdateAllObjects(IList<Object> objects)
