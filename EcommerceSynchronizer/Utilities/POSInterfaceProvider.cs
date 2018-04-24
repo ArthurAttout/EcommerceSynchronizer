@@ -30,7 +30,8 @@ namespace EcommerceSynchronizer.Model
                     case EnumPOSTypes.HIBOUTIK:
                         _posInterfaces.Add(new HiboutikPOS(posCfg.AccessToken,
                             posCfg.EmailAddress,
-                            posCfg.AccountName));
+                            posCfg.AccountName,
+                            posCfg.MaximumRequests));
                         break;
                         
                     case EnumPOSTypes.LIGHTSPEED:

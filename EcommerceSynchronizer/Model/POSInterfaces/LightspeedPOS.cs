@@ -60,8 +60,8 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
             if (dataStream != null)
             {
                 var reader = new StreamReader(dataStream);
-                var responseJSON = reader.ReadToEnd();
-                var list = JsonConvert.DeserializeObject<ItemListBindingModel>(responseJSON);
+                var responseJson = reader.ReadToEnd();
+                var list = JsonConvert.DeserializeObject<ItemListBindingModel>(responseJson);
                 foreach (var itemInventory in list.Item)
                 {
                     returnList.Add(new Object()
@@ -80,7 +80,8 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public bool CanMakeRequest()
         {
-            return (DateTokenExpiration > DateTime.Now);
+            // Gives a tolerance of 10 seconds to make all requests
+            return (DateTokenExpiration > DateTime.Now.AddSeconds(10));
         }
 
         void IPOSInterface.RefreshToken()

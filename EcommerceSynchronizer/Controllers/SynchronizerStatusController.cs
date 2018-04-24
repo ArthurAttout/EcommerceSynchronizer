@@ -59,7 +59,7 @@ namespace EcommerceSynchronizer.Controllers
         {
 
             BackgroundJob.Enqueue(() => _synchronizer.UpdateFromTimeout());
-            return "updated";
+            return "pending updated";
         }
 
         [Route("api/synchronizer/sale")]

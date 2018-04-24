@@ -10,6 +10,7 @@ using EcommerceSynchronizer.Synchronizers;
 using EcommerceSynchronizer.Utilities;
 using Hangfire;
 using Hangfire.Storage;
+using Hangfire.Storage.Monitoring;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -69,6 +70,22 @@ namespace EcommerceSynchronizer
                 {
                     RecurringJob.RemoveIfExists(recurringJob.Id);
                 }
+            }
+
+            var toDelete = new List<string>();
+
+            foreach (QueueWithTopEnqueuedJobsDto queue in JobStorage.Current.GetMonitoringApi().Queues())
+            {
+                for (var i = 0; i < Math.Ceiling(queue.Length / 1000d); i++)
+                {
+                    JobStorage.Current.GetMonitoringApi().EnqueuedJobs(queue.Name, 1000 * i, 1000)
+                        .ForEach(x => toDelete.Add(x.Key));
+                }
+            }
+
+            foreach (var jobId in toDelete)
+            {
+                BackgroundJob.Delete(jobId);
             }
         }
     }

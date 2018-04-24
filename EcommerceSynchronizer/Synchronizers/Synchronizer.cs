@@ -9,8 +9,8 @@ namespace EcommerceSynchronizer.Synchronizers
     public class Synchronizer
     {
         
-        private IEcommerceDatabase _ecommerceDatabase;
-        private IPOSInterfaceProvider _posInterfaceProvider;
+        private readonly IEcommerceDatabase _ecommerceDatabase;
+        private readonly IPOSInterfaceProvider _posInterfaceProvider;
 
         public Synchronizer(IPOSInterfaceProvider posInterfaceProvider, IEcommerceDatabase ecommerceDatabase)
         {
@@ -24,7 +24,7 @@ namespace EcommerceSynchronizer.Synchronizers
 
         public void UpdateFromTimeout()
         {
-            foreach(var posInterface in _posInterfaceProvider .GetAllInterfaces())
+            foreach(var posInterface in _posInterfaceProvider.GetAllInterfaces())
             {
                 if (posInterface.CanMakeRequest())
                 {
@@ -36,7 +36,6 @@ namespace EcommerceSynchronizer.Synchronizers
                     if(posInterface.CanMakeRequest())
                         _ecommerceDatabase.UpdateAllProducts(posInterface.GetAllProducts());
                 }
-                    
             }
         }
 

@@ -86,9 +86,9 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
                 var reader = new StreamReader(dataStream);
                 var responseJSON = reader.ReadToEnd();
                 var itemVariation = JsonConvert.DeserializeObject<ItemVariationBindingModel>(responseJSON);
-                var basicItemID = itemVariation.obj.item_variation_data.item_id;
+                var basicItemID = itemVariation.ObjectVariation.item_variation_data.item_id;
 
-                request = WebRequest.Create($"https://connect.squareup.com/v2/catalog/object/{variationID}");
+                request = WebRequest.Create($"https://connect.squareup.com/v2/catalog/object/{basicItemID}");
                 request.Headers = headers;
                 response = request.GetResponse();
                 dataStream = response.GetResponseStream();
@@ -99,7 +99,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
                     responseJSON = reader.ReadToEnd();
                     var basicItem = JsonConvert.DeserializeObject<ItemBindingModel>(responseJSON);
 
-                    return $"{basicItem.obj.item_data.name} - {itemVariation.obj.item_variation_data.name}";
+                    return $"{basicItem.ObjectItem.item_data.name} - {itemVariation.ObjectVariation.item_variation_data.name}";
                 }
             }
 

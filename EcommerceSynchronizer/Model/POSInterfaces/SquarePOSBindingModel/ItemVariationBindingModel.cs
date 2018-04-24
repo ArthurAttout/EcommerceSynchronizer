@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace EcommerceSynchronizer.Model.POSInterfaces.SquarePOSBindingModel
 {
@@ -41,6 +42,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces.SquarePOSBindingModel
 
     public class ItemVariationBindingModel
     {
-        public ObjectVariation obj { get; set; }
+        [JsonProperty("object")]
+        public ObjectVariation ObjectVariation { get; set; }
     }
 }

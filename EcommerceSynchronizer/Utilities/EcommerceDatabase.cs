@@ -8,7 +8,18 @@ namespace EcommerceSynchronizer.Model
 {
     public class EcommerceDatabase : IEcommerceDatabase
     {
-        public MySqlConnection MySqlConnection { get; set; }
+        private MySqlConnection _mySqlConnection;
+
+        public MySqlConnection MySqlConnection
+        {
+            get
+            {
+                if ((_mySqlConnection.State & ConnectionState.Open) == 0) //if not already opened
+                    _mySqlConnection.Open();
+                return _mySqlConnection;
+            }
+            set => _mySqlConnection = value;
+        }
 
         public string TableStockName { get; }
 
@@ -17,6 +28,7 @@ namespace EcommerceSynchronizer.Model
         public string ColumnIDEcommerce { get; }
         public string ColumnAccountID { get; }
         public string ColumnQuantity { get; }
+        public string ColumnDescription { get; set; }
         
 
         public EcommerceDatabase(string connectionString)
@@ -28,47 +40,47 @@ namespace EcommerceSynchronizer.Model
             ColumnID = "id";
             ColumnQuantity = "quantity";
             ColumnAccountID = "accountID";
+            ColumnDescription = "description";
         }
 
         public void UpdateAllProducts(IList<Object> objects)
         {
-            try
+            foreach (var obj in objects)
             {
-                if((MySqlConnection.State & ConnectionState.Open) == 0) //if not already opened
-                    MySqlConnection.Open();
+                //Retrieve original object from database
+                var objFromDatabase = GetObjectByAccountIDAndID(obj);
+                if (objFromDatabase == null) continue;
 
-                foreach (var obj in objects)
-                {
-                    //Retrieve original object from database
-                    var objFromDatabase = GetObjectByAccountIDAndID(obj);
-                    if (objFromDatabase == null) continue;
+                var cmd = new MySqlCommand($"INSERT INTO {TableStockName} ({ColumnID}, {ColumnIDPos},{ColumnIDEcommerce},{ColumnQuantity},{ColumnAccountID},{ColumnDescription}) " +
+                                            "VALUES (@ID,@IDPos,@IDEcommerce,@Quantity,@AccountID,@Description) " +
+                                            $"ON DUPLICATE KEY UPDATE {ColumnQuantity}=@QuantityUpdate", MySqlConnection);
 
-                    var cmd = new MySqlCommand($"INSERT INTO {TableStockName} ({ColumnID}, {ColumnIDPos},{ColumnIDEcommerce},{ColumnQuantity},{ColumnAccountID}) " +
-                                               "VALUES (@ID,@IDPos,@IDEcommerce,@Quantity,@AccountID) " +
-                                               $"ON DUPLICATE KEY UPDATE {ColumnQuantity}=@QuantityUpdate", MySqlConnection);
-
-                    cmd.Parameters.AddWithValue("@ID", objFromDatabase.ID);
-                    cmd.Parameters.AddWithValue("@IDPos", objFromDatabase.PosID);
-                    cmd.Parameters.AddWithValue("@IDEcommerce", objFromDatabase.EcommerceID);
-                    cmd.Parameters.AddWithValue("@Quantity", obj.Quantity);
-                    cmd.Parameters.AddWithValue("@QuantityUpdate", obj.Quantity);
-                    cmd.Parameters.AddWithValue("@AccountID", obj.POS.AccountID);
-                    cmd.Prepare();
-                    cmd.ExecuteNonQuery();
-                }
-                
-                MySqlConnection.Close();
+                cmd.Parameters.AddWithValue("@ID", objFromDatabase.ID);
+                cmd.Parameters.AddWithValue("@IDPos", objFromDatabase.PosID);
+                cmd.Parameters.AddWithValue("@IDEcommerce", objFromDatabase.EcommerceID);
+                cmd.Parameters.AddWithValue("@Quantity", obj.Quantity);
+                cmd.Parameters.AddWithValue("@QuantityUpdate", obj.Quantity);
+                cmd.Parameters.AddWithValue("@AccountID", obj.POS.AccountID);
+                cmd.Parameters.AddWithValue("@Description", obj.Name);
+                cmd.Prepare();
+                cmd.ExecuteNonQuery();
             }
-            catch (MySqlException ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-
+            MySqlConnection.Close();
         }
 
         public bool AddNewProduct(Object obj)
         {
-            throw new NotImplementedException();
+            var cmd = new MySqlCommand(
+                $"INSERT INTO {TableStockName} ({ColumnIDPos},{ColumnIDEcommerce},{ColumnQuantity},{ColumnAccountID},{ColumnDescription}) " +
+                "VALUES (@IDPos,@IDEcommerce,@Quantity,@AccountID,@Description) ", MySqlConnection);
+
+            cmd.Parameters.AddWithValue("@IDPos", obj.PosID);
+            cmd.Parameters.AddWithValue("@IDEcommerce", obj.EcommerceID);
+            cmd.Parameters.AddWithValue("@Quantity", obj.Quantity);
+            cmd.Parameters.AddWithValue("@AccountID", obj.POS.AccountID);
+            cmd.Parameters.AddWithValue("@Description", obj.Name);
+            cmd.Prepare();
+            return cmd.ExecuteNonQuery() > 0;   
         }
 
         private Object GetObjectByAccountIDAndID(Object obj)

@@ -5,12 +5,13 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 {
     public class HiboutikPOS : IPOSInterface
     {
-        private int _maximumRequest = 10000;
+        private int _maximumRequest;
         private int requests;
 
-        public HiboutikPOS(string accessToken, string emailAddress, string accountName)
+        public HiboutikPOS(string accessToken, string emailAddress, string accountName, int maximumRequest)
         {
             AccountID = accountName;
+            _maximumRequest = maximumRequest;
         }
 
         public string AccountID { get; set; }
@@ -37,7 +38,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public void RefreshToken()
         {
-            throw new System.NotImplementedException();
+            //Nothing to do 
         }
     }
 }

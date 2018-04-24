@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
 using EcommerceSynchronizer.Model;
 using EcommerceSynchronizer.Model.Interfaces;
 using EcommerceSynchronizer.Synchronizers;
 using EcommerceSynchronizer.Utilities;
 using Hangfire;
+using Hangfire.Storage;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Object = EcommerceSynchronizer.Model.Object;
@@ -25,76 +27,93 @@ namespace EcommerceSynchronizer.Controllers
             _posProvider = provider;
         }
 
+        [Route("api/items/{jobID}")]
+        [HttpGet("api/items/{jobID}")]
+        public string GetStatus(string jobid)
+        {
+            var connection = JobStorage.Current.GetConnection();
+            var jobData = connection.GetJobData(jobid);
+            var stateName = jobData.State;
 
-        // Endpoint to insert a new item in the stock database 
+            return "Job status : " + stateName;
+        }
+
+        // Endpoint to insert a new item in th e stock database 
         // After it is added, the item will automatically be synchronized
         [Route("api/items")]
         [HttpPost]
-        public string PostStart([FromBody]string item)
+        public string PostStart([FromBody] PostItemBindingModel item)
         {
-            var obj = JsonConvert.DeserializeObject<PostItemBindingModel>(item);
-            BackgroundJob.Enqueue(() => AddNewItem(obj));
-            return "started";
-        }
 
-        private bool AddNewItem(PostItemBindingModel item)
-        {
-            if (item.ItemPOSID != null)
+            if (item?.item_name == null && item?.item_pos_id == null || item?.account_id == null)
             {
-                foreach (var posInterface in _posProvider.GetAllInterfaces())
-                {
-                    var allProducts = posInterface.GetAllProducts();
-                    var product = allProducts.First(i => i.PosID.Equals(item.ItemPOSID));
-                    if (product == null) //The ID could not be found
-                        return false;
-
-                    var itemToInsert = new Object()
-                    {
-                        EcommerceID = item.ItemEcommerceID,
-                        POS = posInterface,
-                        PosID = item.ItemPOSID,
-                        Quantity = product.Quantity,
-                        Name = product.Name
-                    };
-                    _ecommerceDatabase.AddNewProduct(itemToInsert);
-                }
-            }
-            else
-            {
-                foreach (var posInterface in _posProvider.GetAllInterfaces())
-                {
-                    var allProducts = posInterface.GetAllProducts();
-                    var product = allProducts.First(i => i.Name.Equals(item.ItemName));
-                    if (product == null) //The name could not be found
-                        return false;
-
-                    var itemToInsert = new Object()
-                    {
-                        EcommerceID = item.ItemEcommerceID,
-                        POS = posInterface,
-                        PosID = item.ItemPOSID,
-                        Quantity = product.Quantity
-                    };
-                }
+                Response.StatusCode = 400;
+                return "invalid request";
             }
 
-            return false;
+            var jobID = BackgroundJob.Enqueue(() => AddNewItem(item));
+            Response.StatusCode = 202;
+            return "pending added. Location : items/" + jobID;
         }
 
+        [AutomaticRetry(Attempts = 0)]
+        public void AddNewItem(PostItemBindingModel item)
+        {
+            try
+            {
+                var posInterface = _posProvider.GetAllInterfaces()
+                    .FirstOrDefault(i => i.AccountID.Equals(item.account_id));
+
+                if (posInterface == null)
+                    throw new ArgumentException("The POS account with ID " + item.account_id + " could not be found."); ;
+
+                if (!posInterface.CanMakeRequest())
+                {
+                    posInterface.RefreshToken();
+                    if (!posInterface.CanMakeRequest()) return;
+                }
+                var allProducts = posInterface.GetAllProducts();
+                Object product;
+
+                if (item.item_pos_id != null)
+                    product = allProducts.FirstOrDefault(i => i.PosID.Equals(item.item_pos_id));
+                else
+                    product = allProducts.FirstOrDefault(i => i.Name.Equals(item.item_name));
+                
+                if (product == null) //The name could not be found
+                    throw new ArgumentException("The product with name " + item.item_name + " could not be found in the specified POS system register.\n" +
+                                                "Valid products include : [" + string.Join(",", allProducts.Select(p => p.Name).ToArray()) + "]");
+
+                var itemToInsert = new Object()
+                {
+                    EcommerceID = item.item_ecommerce_id,
+                    POS = posInterface,
+                    PosID = product.PosID,
+                    Quantity = product.Quantity,
+                    Name = product.Name
+                };
+                _ecommerceDatabase.AddNewProduct(itemToInsert);
+            }
+            catch (Exception e)
+            {
+                Console.Write(e.ToString());
+                throw;
+            }
+        }
     }
 
     public class PostItemBindingModel
     {
         [JsonProperty("item_name")]
-        public string ItemName { get; set; }
+        public string item_name { get; set; }
 
         [JsonProperty("item_pos_id")]
-        public string ItemPOSID { get; set; }
+        public string item_pos_id { get; set; }
 
         [JsonProperty("item_ecommerce_id")]
-        public string ItemEcommerceID { get; set; }
+        public string item_ecommerce_id { get; set; }
 
         [JsonProperty("account_id")]
-        public string AccountID { get; set; }
+        public string account_id { get; set; }
     }
 }
