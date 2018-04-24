@@ -41,8 +41,11 @@ namespace EcommerceSynchronizer
             services.AddSingleton<ApplicationState>();
             services.AddSingleton<Synchronizer>();
             services.AddAutoMapper();
-            services.AddSingleton<IPOSInterfaceProvider>(new POSInterfaceProvider(cfg));
-            services.AddSingleton<IEcommerceDatabase>(new EcommerceDatabase(Configuration["ecommerceDatabaseConnectionString"]));
+
+            var posProvider = new POSInterfaceProvider(cfg);
+
+            services.AddSingleton<IPOSInterfaceProvider>(posProvider);
+            services.AddSingleton<IEcommerceDatabase>(new EcommerceDatabase(Configuration["ecommerceDatabaseConnectionString"],posProvider));
             services.AddHangfire(x => x.UseSqlServerStorage(Configuration["hangfireDatabaseConnectionString"]));
 
         }
@@ -89,6 +92,4 @@ namespace EcommerceSynchronizer
             }
         }
     }
-
-
 }

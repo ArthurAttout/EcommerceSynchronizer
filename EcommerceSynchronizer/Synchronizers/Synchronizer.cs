@@ -1,5 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using EcommerceSynchronizer.Controllers;
 using EcommerceSynchronizer.Model;
 using EcommerceSynchronizer.Model.Interfaces;
@@ -45,7 +47,15 @@ namespace EcommerceSynchronizer.Synchronizers
 
         public void UpdateFromSale(Sale sale)
         {
+            var objectFromDatabase = _ecommerceDatabase.GetObjectByEcommerceID(sale.Object.EcommerceID);
+            var posToUpdate = objectFromDatabase.POS;
 
-        }
+            if (!posToUpdate.CanMakeRequest())
+            {
+                posToUpdate.RefreshToken();
+                if (!posToUpdate.CanMakeRequest()) throw new UnauthorizedAccessException("Could not perform update on pos " + posToUpdate.AccountID);
+            }
+            posToUpdate.AdjustQuantityOfProduct(objectFromDatabase.PosID, sale.Delta, sale.BalanceInCents);
+        }       
     }
 }

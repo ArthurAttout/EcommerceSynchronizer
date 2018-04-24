@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
+using EcommerceSynchronizer.Model.Interfaces;
 using Hangfire.Dashboard;
 using MySql.Data.MySqlClient;
 
@@ -8,6 +10,7 @@ namespace EcommerceSynchronizer.Model
 {
     public class EcommerceDatabase : IEcommerceDatabase
     {
+        private readonly IPOSInterfaceProvider _posInterfaceProvider;
         private MySqlConnection _mySqlConnection;
 
         public MySqlConnection MySqlConnection
@@ -30,9 +33,9 @@ namespace EcommerceSynchronizer.Model
         public string ColumnQuantity { get; }
         public string ColumnDescription { get; set; }
         
-
-        public EcommerceDatabase(string connectionString)
+        public EcommerceDatabase(string connectionString, IPOSInterfaceProvider posInterfaceProvider)
         {
+            _posInterfaceProvider = posInterfaceProvider;
             MySqlConnection = new MySqlConnection(connectionString);
             TableStockName = "stock";
             ColumnIDPos = "idProductPOS";
@@ -48,7 +51,7 @@ namespace EcommerceSynchronizer.Model
             foreach (var obj in objects)
             {
                 //Retrieve original object from database
-                var objFromDatabase = GetObjectByAccountIDAndID(obj);
+                var objFromDatabase = GetObjectByAccountIDAndID(obj.PosID,obj.POS.AccountID);
                 if (objFromDatabase == null) continue;
 
                 var cmd = new MySqlCommand($"INSERT INTO {TableStockName} ({ColumnID}, {ColumnIDPos},{ColumnIDEcommerce},{ColumnQuantity},{ColumnAccountID},{ColumnDescription}) " +
@@ -83,15 +86,15 @@ namespace EcommerceSynchronizer.Model
             return cmd.ExecuteNonQuery() > 0;   
         }
 
-        private Object GetObjectByAccountIDAndID(Object obj)
+        public Object GetObjectByAccountIDAndID(string posID, string accountID)
         {
             var sql = $"SELECT {ColumnID},{ColumnIDPos},{ColumnIDEcommerce},{ColumnQuantity},{ColumnAccountID} " +
                       $"FROM {TableStockName} " +
                       $"WHERE {ColumnIDPos}=@ObjectID AND {ColumnAccountID}=@AccountID";
             var cmd = new MySqlCommand(sql, MySqlConnection);
 
-            cmd.Parameters.AddWithValue("@ObjectID", obj.PosID);
-            cmd.Parameters.AddWithValue("@AccountID", obj.POS.AccountID);
+            cmd.Parameters.AddWithValue("@ObjectID", posID);
+            cmd.Parameters.AddWithValue("@AccountID", accountID);
 
             var rdr = cmd.ExecuteReader();
             Object objFound = null;
@@ -105,6 +108,37 @@ namespace EcommerceSynchronizer.Model
                     PosID = rdr[1].ToString(),
                     EcommerceID = rdr[2].ToString(),
                     Quantity = int.Parse(rdr[3].ToString()),
+                };
+            }
+            rdr.Close();
+            return objFound;
+        }
+
+
+
+        public Object GetObjectByEcommerceID(string id)
+        {
+            var sql = $"SELECT {ColumnID},{ColumnIDPos},{ColumnIDEcommerce},{ColumnQuantity},{ColumnAccountID},{ColumnDescription} " +
+                      $"FROM {TableStockName} " +
+                      $"WHERE {ColumnIDEcommerce}=@IDEcommerce";
+            var cmd = new MySqlCommand(sql, MySqlConnection);
+
+            cmd.Parameters.AddWithValue("@IDEcommerce", id);
+
+            var rdr = cmd.ExecuteReader();
+            Object objFound = null;
+
+            if (rdr.Read())
+            {
+                //Object found
+                objFound = new Object()
+                {
+                    ID = rdr[0].ToString(),
+                    PosID = rdr[1].ToString(),
+                    EcommerceID = rdr[2].ToString(),
+                    Quantity = int.Parse(rdr[3].ToString()),
+                    POS = _posInterfaceProvider.GetAllInterfaces().FirstOrDefault(i => i.AccountID.Equals(rdr[4])),
+                    Name = rdr[5].ToString()
                 };
             }
             rdr.Close();

@@ -27,5 +27,8 @@ namespace EcommerceSynchronizer.Utilities
         public string AccountID { get; set; }
         public string ClientID { get; set; }
         public string ClientSecret { get; set; }
+        public int EmployeeID { get; set; }
+        public int RegisterID { get; set; }
+        public int ShopID { get; set; }
     }
 }

@@ -39,7 +39,10 @@ namespace EcommerceSynchronizer.Model
                             posCfg.RefreshToken,
                             posCfg.ClientID,
                             posCfg.ClientSecret,
-                            posCfg.AccountID));
+                            posCfg.AccountID,
+                            posCfg.EmployeeID,
+                            posCfg.RegisterID,
+                            posCfg.ShopID));
                         break;
 
                     default:

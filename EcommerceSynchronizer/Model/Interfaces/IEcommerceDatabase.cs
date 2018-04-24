@@ -7,5 +7,7 @@ namespace EcommerceSynchronizer.Model
     {
         void UpdateAllProducts(IList<Object> objects);
         bool AddNewProduct(Object obj);
+        Object GetObjectByAccountIDAndID(string posid, string accountID);
+        Object GetObjectByEcommerceID(string id);
     }
 }

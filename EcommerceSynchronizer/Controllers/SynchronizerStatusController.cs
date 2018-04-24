@@ -2,10 +2,12 @@
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.Mvc;
 using System.Web;
+using EcommerceSynchronizer.Model;
 using EcommerceSynchronizer.Synchronizers;
 using EcommerceSynchronizer.Utilities;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
 
 namespace EcommerceSynchronizer.Controllers
 {
@@ -47,7 +49,9 @@ namespace EcommerceSynchronizer.Controllers
         [HttpPost]
         public string PostStop()
         {
-            RecurringJob.RemoveIfExists(_state.SynchronizerJobID);
+            if(_state.SynchronizerJobID != null)
+                RecurringJob.RemoveIfExists(_state.SynchronizerJobID);
+
             _state.IsSynchronizerRunning = false;
 
             return "stopped";
@@ -64,11 +68,37 @@ namespace EcommerceSynchronizer.Controllers
 
         [Route("api/synchronizer/sale")]
         [HttpPost]
-        public string PostSaleTrigger()
+        public string PostSaleTrigger([FromBody] PostSaleBindingModel model)
         {
+            if (model?.Delta == null || model.ItemEcommerceId == null || model.BalanceInCents <= 0)
+            {
+                Response.StatusCode = 400;
+                return "invalid request. Should provide ItemEcommerceId and delta";
+            }
 
-            _synchronizer.UpdateFromTimeout();
+            var sale = new Sale()
+            {
+                Delta = model.Delta,
+                Object = new Model.Object()
+                {
+                    EcommerceID = model.ItemEcommerceId
+                },
+                BalanceInCents = model.BalanceInCents
+            };
+            BackgroundJob.Enqueue(() => _synchronizer.UpdateFromSale(sale));
             return "updated";
         }
+    }
+
+    public class PostSaleBindingModel
+    {
+        [JsonProperty("item_ecommerce_id")]
+        public string ItemEcommerceId { get; set; }
+
+        [JsonProperty("delta")]
+        public int Delta { get; set; }
+
+        [JsonProperty("balance")]
+        public int BalanceInCents { get; set; }
     }
 }

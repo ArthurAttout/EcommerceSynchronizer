@@ -8,7 +8,7 @@ namespace EcommerceSynchronizer.Controllers
     {
         string AccountID { get; set; }
 
-        bool AdjustQuantityOfProduct(string productId, int delta);
+        bool AdjustQuantityOfProduct(string productId, int delta, int balanceInCents);
         void UpdateAllObjects(IList<Object> objects);
         IList<Object> GetAllProducts();
         bool CanMakeRequest();
