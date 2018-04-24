@@ -16,7 +16,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public string AccountID { get; set; }
 
-        public bool AdjustQuantityOfProduct(string productId, int delta, int balance)
+        public bool AdjustQuantityOfProduct(string productId, int quantitySold, int balance)
         {
             throw new System.NotImplementedException();
         }

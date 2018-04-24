@@ -110,7 +110,7 @@ namespace EcommerceSynchronizer.Controllers
         [JsonProperty("item_pos_id")]
         public string item_pos_id { get; set; }
 
-        [JsonProperty("ItemEcommerceId")]
+        [JsonProperty("item_ecommerce_id")]
         public string item_ecommerce_id { get; set; }
 
         [JsonProperty("account_id")]

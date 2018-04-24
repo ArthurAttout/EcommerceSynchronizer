@@ -78,7 +78,7 @@ namespace EcommerceSynchronizer.Controllers
 
             var sale = new Sale()
             {
-                Delta = model.Delta,
+                QuantitySold = model.Delta,
                 Object = new Model.Object()
                 {
                     EcommerceID = model.ItemEcommerceId

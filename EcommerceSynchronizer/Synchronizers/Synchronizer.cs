@@ -55,7 +55,10 @@ namespace EcommerceSynchronizer.Synchronizers
                 posToUpdate.RefreshToken();
                 if (!posToUpdate.CanMakeRequest()) throw new UnauthorizedAccessException("Could not perform update on pos " + posToUpdate.AccountID);
             }
-            posToUpdate.AdjustQuantityOfProduct(objectFromDatabase.PosID, sale.Delta, sale.BalanceInCents);
+            posToUpdate.AdjustQuantityOfProduct(objectFromDatabase.PosID, sale.QuantitySold, sale.BalanceInCents);
+            objectFromDatabase.Quantity -= sale.QuantitySold;
+
+            _ecommerceDatabase.UpdateProduct(objectFromDatabase);
         }       
     }
 }

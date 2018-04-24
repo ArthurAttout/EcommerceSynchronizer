@@ -17,7 +17,7 @@ namespace EcommerceSynchronizer.Model
         {
             get
             {
-                if ((_mySqlConnection.State & ConnectionState.Open) == 0) //if not already opened
+                if (_mySqlConnection.State != ConnectionState.Open) //if not already opened
                     _mySqlConnection.Open();
                 return _mySqlConnection;
             }
@@ -69,6 +69,22 @@ namespace EcommerceSynchronizer.Model
                 cmd.ExecuteNonQuery();
             }
             MySqlConnection.Close();
+        }
+
+        public bool UpdateProduct(Object obj)
+        {
+            var cmd = new MySqlCommand(
+                $"UPDATE {TableStockName} SET {ColumnIDPos} = @IDPos ,{ColumnIDEcommerce}=@IDEcommerce ,{ColumnQuantity}=@Quantity,{ColumnAccountID}=@AccountID,{ColumnDescription}=@Description " +
+                $"WHERE {ColumnID}=@ID ", MySqlConnection);
+
+            cmd.Parameters.AddWithValue("@ID", obj.ID);
+            cmd.Parameters.AddWithValue("@IDPos", obj.PosID);
+            cmd.Parameters.AddWithValue("@IDEcommerce", obj.EcommerceID);
+            cmd.Parameters.AddWithValue("@Quantity", obj.Quantity);
+            cmd.Parameters.AddWithValue("@AccountID", obj.POS.AccountID);
+            cmd.Parameters.AddWithValue("@Description", obj.Name);
+            cmd.Prepare();
+            return cmd.ExecuteNonQuery() > 0;
         }
 
         public bool AddNewProduct(Object obj)

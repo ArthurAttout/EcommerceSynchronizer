@@ -4,25 +4,26 @@ using System.IO;
 using System.Net;
 using EcommerceSynchronizer.Controllers;
 using EcommerceSynchronizer.Model.POSInterfaces.SquarePOSBindingModel;
+using Flurl.Http;
 using Newtonsoft.Json;
 
 namespace EcommerceSynchronizer.Model.POSInterfaces
 {
     public class SquarePOS : IPOSInterface
     {
-        private string _accessToken;
+        public string AccessToken { get; }
         private int _maximumRequest = 1000;
-        private int _requests;
+        public int Requests { get; }
 
         public SquarePOS(string accessToken, string location)
         {
-            _accessToken = accessToken;
+            AccessToken = accessToken;
             AccountID = location;
         }
 
         public string AccountID { get; set; }
 
-        public bool AdjustQuantityOfProduct(string productId, int delta, int balance)
+        public bool AdjustQuantityOfProduct(string productId, int quantitySold, int balance)
         {
             throw new System.NotImplementedException();
         }
@@ -34,81 +35,52 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public IList<Object> GetAllProducts()
         {
-            var returnList = new List<Object>();
-            
-            var request = WebRequest.Create($"http://connect.squareup.com/v1/{AccountID}/inventory");
-            var headers = new WebHeaderCollection
-            {
-                {HttpRequestHeader.ContentType, "application/json"},
-                {HttpRequestHeader.Authorization, $"Bearer {_accessToken}"},
-                {HttpRequestHeader.Accept, "application/json"}
-            };
-            request.Headers = headers;
-            var response = request.GetResponse();
-            var dataStream = response.GetResponseStream();
-            if (dataStream != null)
-            {
-                var reader = new StreamReader(dataStream);
-                var responseJSON = reader.ReadToEnd();
-                var list = JsonConvert.DeserializeObject<List<ItemInventoryBindingModel>>(responseJSON);
-                foreach (var itemInventory in list)
-                {
-                    var name = GetNameOfItemByVariationID(itemInventory.ID);
-                    returnList.Add(new Object()
-                    {
-                        PosID = itemInventory.ID,
-                        Quantity = itemInventory.Quantity,
-                        POS = this,
-                        Name = name
-                    });
-                }
-                dataStream.Close();
-            }
-            
+            var list = $"http://connect.squareup.com/v1/{AccountID}/inventory"
+                .WithHeader("accept", "application/json")
+                .WithHeader("Authorization", $"Bearer {AccessToken}")
+                .GetJsonAsync<List<ItemInventoryBindingModel>>().Result;
+                
 
+            var returnList = new List<Object>();
+            foreach (var itemInventory in list)
+            {
+                var name = GetNameOfItemByVariationID(itemInventory.ID);
+                returnList.Add(new Object()
+                {
+                    PosID = itemInventory.ID,
+                    Quantity = itemInventory.Quantity,
+                    POS = this,
+                    Name = name
+                });
+            }
             return returnList;
         }
 
         private string GetNameOfItemByVariationID(string variationID)
         {
-            var request = WebRequest.Create($"https://connect.squareup.com/v2/catalog/object/{variationID}");
-            var headers = new WebHeaderCollection
-            {
-                {HttpRequestHeader.ContentType, "application/json"},
-                {HttpRequestHeader.Authorization, $"Bearer {_accessToken}"},
-                {HttpRequestHeader.Accept, "application/json"}
-            };
-            request.Headers = headers;
-            var response = request.GetResponse();
-            var dataStream = response.GetResponseStream();
-            if (dataStream != null)
-            {
-                var reader = new StreamReader(dataStream);
-                var responseJSON = reader.ReadToEnd();
-                var itemVariation = JsonConvert.DeserializeObject<ItemVariationBindingModel>(responseJSON);
-                var basicItemID = itemVariation.ObjectVariation.item_variation_data.item_id;
 
-                request = WebRequest.Create($"https://connect.squareup.com/v2/catalog/object/{basicItemID}");
-                request.Headers = headers;
-                response = request.GetResponse();
-                dataStream = response.GetResponseStream();
+            var itemVariation = $"https://connect.squareup.com/v2/catalog/object/{variationID}"
+                .WithHeader("accept", "application/json")
+                .WithHeader("Authorization", $"Bearer {AccessToken}")
+                .GetAsync()
+                .ReceiveJson<ItemVariationBindingModel>().Result;
+            
+            var basicItemID = itemVariation.ObjectVariation.item_variation_data.item_id;
+            var basicItem = $"https://connect.squareup.com/v2/catalog/object/{basicItemID}"
+                .WithHeader("accept", "application/json")
+                .WithHeader("Authorization", $"Bearer {AccessToken}")
+                .GetAsync()
+                .ReceiveJson<ItemBindingModel>().Result;
 
-                if (dataStream != null)
-                {
-                    reader = new StreamReader(dataStream);
-                    responseJSON = reader.ReadToEnd();
-                    var basicItem = JsonConvert.DeserializeObject<ItemBindingModel>(responseJSON);
-
-                    return $"{basicItem.ObjectItem.item_data.name} - {itemVariation.ObjectVariation.item_variation_data.name}";
-                }
-            }
-
-            return null;
+            if(basicItem == null)
+                throw new ArgumentNullException("Could not retrieve basic item from variation item (square POS)");
+            
+            return $"{basicItem?.ObjectItem?.item_data.name} - {itemVariation?.ObjectVariation?.item_variation_data.name}";
         }
 
         public bool CanMakeRequest()
         {
-            return _maximumRequest > _requests;
+            return _maximumRequest > Requests;
         }
 
         public void RefreshToken()

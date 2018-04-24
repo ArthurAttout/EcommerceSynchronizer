@@ -40,7 +40,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
             ClientSecret = clientSecret;
         }
 
-        public bool AdjustQuantityOfProduct(string productId, int delta, int balanceInCents)
+        public bool AdjustQuantityOfProduct(string productId, int quantitySold, int balanceInCents)
         {
             var sale = new SalesBindingModel()
             {
@@ -56,7 +56,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
                         new SaleLine()
                         {
                             itemID = int.Parse(productId),
-                            unitQuantity = delta
+                            unitQuantity = quantitySold
                         }
                     })
                 },
@@ -80,7 +80,8 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine("Error while selling product : " + ex.ToString());
+                throw;
             }
 
             return true;
@@ -93,36 +94,24 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public IList<Object> GetAllProducts()
         {
-            var returnList = new List<Object>();
-            
-            var request = WebRequest.Create($"https://api.lightspeedapp.com/API/Account/{AccountID}/Item.json?load_relations=[\"ItemShops\"]");
-            var headers = new WebHeaderCollection
-            {
-                {HttpRequestHeader.ContentType, "application/json"},
-                {HttpRequestHeader.Authorization, $"Bearer {AccesssToken}"},
-                {HttpRequestHeader.Accept, "application/json"}
-            };
-            request.Headers = headers;
-            var response = request.GetResponse();
-            var dataStream = response.GetResponseStream();
-            if (dataStream != null)
-            {
-                var reader = new StreamReader(dataStream);
-                var responseJson = reader.ReadToEnd();
-                var list = JsonConvert.DeserializeObject<ItemListBindingModel>(responseJson);
-                foreach (var itemInventory in list.Item)
-                {
-                    returnList.Add(new Object()
-                    {
-                        PosID = itemInventory.itemID,
-                        Quantity = int.Parse(itemInventory.ItemShops.ItemShop.ElementAt(0).qoh), //TODO handle multiple shops
-                        POS = this,
-                        Name = itemInventory.description
-                    });
-                }
-            }
-            
 
+            var list = $"https://api.lightspeedapp.com/API/Account/{AccountID}/Item.json?load_relations=[\"ItemShops\"]"
+                .WithHeader("accept", "application/json")
+                .WithHeader("Authorization", $"Bearer {AccesssToken}")
+                .GetAsync()
+                .ReceiveJson<ItemListBindingModel>().Result;
+
+            var returnList = new List<Object>();
+            foreach (var itemInventory in list.Item)
+            {
+                returnList.Add(new Object()
+                {
+                    PosID = itemInventory.itemID,
+                    Quantity = int.Parse(itemInventory.ItemShops.ItemShop.ElementAt(0).qoh), //TODO handle multiple shops
+                    POS = this,
+                    Name = itemInventory.description
+                });
+            }
             return returnList;
         }
 
@@ -134,32 +123,17 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         void IPOSInterface.RefreshToken()
         {
-            var request = WebRequest.Create("https://cloud.lightspeedapp.com/oauth/access_token.php");
-            request.Method = "POST";
-            request.ContentType = "application/x-www-form-urlencoded";
+            var refreshTokenModel = new RefreshTokenBindingModel()
+            {
+                ClientID = ClientID,
+                ClientSecret = ClientSecret,
+                RefreshToken = RefreshToken,
+                GrantType = "refresh_token"
+            };
+            var accessTokenModel = "https://cloud.lightspeedapp.com/oauth/access_token.php"
+                .PostJsonAsync(refreshTokenModel)
+                .ReceiveJson<AccessTokenBindingModel>().Result;
 
-            var outgoingQueryString = HttpUtility.ParseQueryString(String.Empty);
-            outgoingQueryString.Add("refresh_token", RefreshToken);
-            outgoingQueryString.Add("client_id", ClientID);
-            outgoingQueryString.Add("client_secret", ClientSecret);
-            outgoingQueryString.Add("grant_type", "refresh_token");
-
-            var postdata = outgoingQueryString.ToString();
-
-            var byteArray = Encoding.UTF8.GetBytes(postdata);
-            request.ContentLength = byteArray.Length;
-            var dataStream = request.GetRequestStream();
-            dataStream.Write(byteArray, 0, byteArray.Length);
-            dataStream.Close();
-
-            var response = request.GetResponse();
-            dataStream = response.GetResponseStream();
-            if (dataStream == null)
-                throw new SecurityTokenException("Could not refresh token for client " + ClientID);
-
-            var reader = new StreamReader(dataStream);
-            var responseJSON = reader.ReadToEnd();
-            var accessTokenModel = JsonConvert.DeserializeObject<AccessTokenBindingModel>(responseJSON);
             DateTokenExpiration = DateTime.Now.AddSeconds(accessTokenModel.ExpiresIn);
             AccesssToken = accessTokenModel.AccessToken;
         }
