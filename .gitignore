@@ -289,3 +289,6 @@ __pycache__/
 
 # Settings (containing tokens)
 EcommerceSynchronizer/appsettings.json
+
+#Tests
+TestConsoleApp/
