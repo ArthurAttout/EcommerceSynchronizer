@@ -292,3 +292,4 @@ EcommerceSynchronizer/appsettings.json
 
 #Tests
 TestConsoleApp/
+drop.sql
