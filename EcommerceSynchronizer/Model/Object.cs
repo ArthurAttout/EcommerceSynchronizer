@@ -1,4 +1,5 @@
 ﻿using EcommerceSynchronizer.Controllers;
+using EcommerceSynchronizer.Model.Interfaces;
 
 namespace EcommerceSynchronizer.Model
 {

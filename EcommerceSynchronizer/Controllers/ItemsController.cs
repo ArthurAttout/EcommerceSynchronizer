@@ -45,7 +45,7 @@ namespace EcommerceSynchronizer.Controllers
         public string PostStart([FromBody] PostItemBindingModel item)
         {
 
-            if (item?.item_name == null && item?.item_pos_id == null || item?.account_id == null)
+            if (item?.ItemName == null && item?.ItemPosId == null || item?.AccountId == null)
             {
                 Response.StatusCode = 400;
                 return "invalid request";
@@ -62,10 +62,10 @@ namespace EcommerceSynchronizer.Controllers
             try
             {
                 var posInterface = _posProvider.GetAllInterfaces()
-                    .FirstOrDefault(i => i.AccountID.Equals(item.account_id));
+                    .FirstOrDefault(i => i.AccountID.Equals(item.AccountId));
 
                 if (posInterface == null)
-                    throw new ArgumentException("The POS account with ID " + item.account_id + " could not be found."); ;
+                    throw new ArgumentException("The POS account with ID " + item.AccountId + " could not be found."); ;
 
                 if (!posInterface.CanMakeRequest())
                 {
@@ -75,18 +75,18 @@ namespace EcommerceSynchronizer.Controllers
                 var allProducts = posInterface.GetAllProducts();
                 Object product;
 
-                if (item.item_pos_id != null)
-                    product = allProducts.FirstOrDefault(i => i.PosID.Equals(item.item_pos_id));
+                if (item.ItemPosId != null)
+                    product = allProducts.FirstOrDefault(i => i.PosID.Equals(item.ItemPosId));
                 else
-                    product = allProducts.FirstOrDefault(i => i.Name.Equals(item.item_name));
+                    product = allProducts.FirstOrDefault(i => i.Name.Equals(item.ItemName));
                 
                 if (product == null) //The name could not be found
-                    throw new ArgumentException("The product with name " + item.item_name + " could not be found in the specified POS system register.\n" +
+                    throw new ArgumentException("The product with name " + item.ItemName + " could not be found in the specified POS system register.\n" +
                                                 "Valid products include : [" + string.Join(",", allProducts.Select(p => p.Name).ToArray()) + "]");
 
                 var itemToInsert = new Object()
                 {
-                    EcommerceID = item.item_ecommerce_id,
+                    EcommerceID = item.ItemEcommerceId,
                     POS = posInterface,
                     PosID = product.PosID,
                     Quantity = product.Quantity,
@@ -105,15 +105,15 @@ namespace EcommerceSynchronizer.Controllers
     public class PostItemBindingModel
     {
         [JsonProperty("item_name")]
-        public string item_name { get; set; }
+        public string ItemName { get; set; }
 
         [JsonProperty("item_pos_id")]
-        public string item_pos_id { get; set; }
+        public string ItemPosId { get; set; }
 
         [JsonProperty("item_ecommerce_id")]
-        public string item_ecommerce_id { get; set; }
+        public string ItemEcommerceId { get; set; }
 
         [JsonProperty("account_id")]
-        public string account_id { get; set; }
+        public string AccountId { get; set; }
     }
 }

@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using EcommerceSynchronizer.Model;
 
-namespace EcommerceSynchronizer.Controllers
+namespace EcommerceSynchronizer.Model.Interfaces
 {
     public interface IPOSInterface
     {
         string AccountID { get; set; }
-
         bool AdjustQuantityOfProduct(string productId, int quantitySold, int balanceInCents);
         void UpdateAllObjects(IList<Object> objects);
         IList<Object> GetAllProducts();

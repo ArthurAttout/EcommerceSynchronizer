@@ -45,7 +45,7 @@ namespace EcommerceSynchronizer.Synchronizers
         // -> Update database of POS system based on the sale info
         // -> Update database of website
 
-        public void UpdateFromSale(Sale sale)
+        public bool UpdateFromSale(Sale sale)
         {
             var objectFromDatabase = _ecommerceDatabase.GetObjectByEcommerceID(sale.Object.EcommerceID);
             var posToUpdate = objectFromDatabase.POS;
@@ -53,12 +53,17 @@ namespace EcommerceSynchronizer.Synchronizers
             if (!posToUpdate.CanMakeRequest())
             {
                 posToUpdate.RefreshToken();
-                if (!posToUpdate.CanMakeRequest()) throw new UnauthorizedAccessException("Could not perform update on pos " + posToUpdate.AccountID);
+                if (!posToUpdate.CanMakeRequest())
+                {
+                    Console.WriteLine("Could not update POS from sale. POS id : " + posToUpdate.AccountID);
+                    return false;
+                }
             }
             posToUpdate.AdjustQuantityOfProduct(objectFromDatabase.PosID, sale.QuantitySold, sale.BalanceInCents);
             objectFromDatabase.Quantity -= sale.QuantitySold;
 
             _ecommerceDatabase.UpdateProduct(objectFromDatabase);
+            return true;
         }       
     }
 }

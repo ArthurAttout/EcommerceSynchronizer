@@ -21,6 +21,7 @@ namespace EcommerceSynchronizer.Utilities
         public string EmailAddress { get; set; }
         public string AccountName { get; set; }
         public int MaximumRequests { get; set; }
+        public int StoreID { get; set; }
 
         //Lightspeed
         public string RefreshToken { get; set; }

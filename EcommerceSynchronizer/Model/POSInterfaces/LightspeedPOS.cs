@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Web;
 using EcommerceSynchronizer.Controllers;
+using EcommerceSynchronizer.Model.Interfaces;
 using EcommerceSynchronizer.Model.POSInterfaces.LightspeedPOSBindingModel;
 using EcommerceSynchronizer.Model.POSInterfaces.SquarePOSBindingModel;
 using Flurl.Http;

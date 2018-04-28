@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using EcommerceSynchronizer.Controllers;
+using EcommerceSynchronizer.Model.Interfaces;
 using EcommerceSynchronizer.Model.POSInterfaces.LightspeedPOSBindingModel;
 using EcommerceSynchronizer.Model.POSInterfaces.SquarePOSBindingModel;
 using Flurl.Http;
@@ -86,7 +87,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
             if(basicItem == null)
                 throw new ArgumentNullException("Could not retrieve basic item from variation item (square POS)");
             
-            return $"{basicItem?.ObjectItem?.item_data.name} - {itemVariation?.ObjectVariation?.item_variation_data.name}";
+            return $"{basicItem.ObjectItem?.item_data.name} - {itemVariation.ObjectVariation?.item_variation_data.name}";
         }
 
         public bool CanMakeRequest()

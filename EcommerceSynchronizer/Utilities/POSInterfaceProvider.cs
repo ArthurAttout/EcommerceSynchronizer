@@ -31,6 +31,7 @@ namespace EcommerceSynchronizer.Model
                         _posInterfaces.Add(new HiboutikPOS(posCfg.AccessToken,
                             posCfg.EmailAddress,
                             posCfg.AccountName,
+                            posCfg.StoreID,
                             posCfg.MaximumRequests));
                         break;
                         

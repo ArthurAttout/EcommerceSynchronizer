@@ -85,8 +85,15 @@ namespace EcommerceSynchronizer.Controllers
                 },
                 BalanceInCents = model.BalanceInCents
             };
-            BackgroundJob.Enqueue(() => _synchronizer.UpdateFromSale(sale));
-            return "updated";
+            var jobid = BackgroundJob.Enqueue(() => _synchronizer.UpdateFromSale(sale));
+            var response = new PostSaleResponseBindingModel()
+            {
+                Location = jobid,
+                Status = "pending"
+            };
+
+            Response.StatusCode = 202;
+            return JsonConvert.SerializeObject(response);
         }
     }
 
@@ -100,5 +107,14 @@ namespace EcommerceSynchronizer.Controllers
 
         [JsonProperty("balance")]
         public int BalanceInCents { get; set; }
+    }
+
+    public class PostSaleResponseBindingModel
+    {
+        [JsonProperty("status")]
+        public string Status { get; set; }
+
+        [JsonProperty("location")]
+        public string Location { get; set; }
     }
 }

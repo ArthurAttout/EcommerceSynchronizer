@@ -5,7 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Model\POSInterfaces\HiboutikBindingModel\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
