@@ -94,13 +94,32 @@ curl -X POST \
 	"account_id":"The account ID of the POS that holds the item"
 }'
 ```
-
+### Controlling the synchronizer
 
 Try to force an update to check if the main database successfully updates according to the POS systems you bound to `appsettings.json`
 
 ```
 curl -X POST \
   http://localhost:port/api/synchronizer/forceUpdate
+```
+
+You may start or stop the synchronizer
+
+```
+curl -X POST \
+  http://localhost:port/api/synchronizer/start
+```
+
+```
+curl -X POST \
+  http://localhost:port/api/synchronizer/stop
+```
+
+### Monitor the updates with Hangfire
+
+Go to 
+```
+http://localhost:port/hangfire
 ```
 
 
