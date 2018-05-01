@@ -22,6 +22,7 @@ namespace EcommerceSynchronizer.Utilities
         public string AccountName { get; set; }
         public int MaximumRequests { get; set; }
         public int StoreID { get; set; }
+        public int HiboutikCustomerID { get; set; }
 
         //Lightspeed
         public string RefreshToken { get; set; }
@@ -31,5 +32,9 @@ namespace EcommerceSynchronizer.Utilities
         public int EmployeeID { get; set; }
         public int RegisterID { get; set; }
         public int ShopID { get; set; }
+        public int LightspeedCustomerID { get; set; }
+        
+        //Mobile
+        public string FirebaseFCMID { get; set; }
     }
 }

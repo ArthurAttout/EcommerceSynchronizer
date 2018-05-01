@@ -11,5 +11,6 @@ namespace EcommerceSynchronizer.Model
         bool AddNewProduct(Object obj);
         Object GetObjectByAccountIDAndID(string posid, string accountID);
         Object GetObjectByEcommerceID(string id);
+        List<Object> GetAllObjectsOfAccountID(string id);
     }
 }

@@ -16,8 +16,9 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
         private int _storeId;
         private readonly string _accessToken;
         private readonly string _emailAddress;
+        private readonly int _customerID;
 
-        public HiboutikPOS(string accessToken, string emailAddress, string accountName, int storeId, int maximumRequest)
+        public HiboutikPOS(string accessToken, string emailAddress, string accountName, int storeId, int customerId, int maximumRequest)
         {
             AccountID = accountName;
             _requests = 0;
@@ -25,17 +26,19 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
             _storeId = storeId;
             _accessToken = accessToken;
             _maximumRequest = maximumRequest;
+            _customerID = customerId;
         }
 
         public string AccountID { get; set; }
 
-        public bool AdjustQuantityOfProduct(string productId, int quantitySold, int balance)
+        public bool AdjustQuantityOfProduct(Object objectSold, int quantitySold, int balance)
         {
             
             var sale = new PostSaleBindingModel()
             {
                 StoreID = _storeId,
-                CurrencyCode = "EUR"
+                CurrencyCode = "EUR",
+                CustomerID = _customerID
             };
 
             //Create the sale
@@ -51,7 +54,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
             var saleLine = new PostSaleLineBindingModel()
             {
                 Quantity = quantitySold,
-                ProductID = int.Parse(productId),
+                ProductID = int.Parse(objectSold.PosID),
                 SaleID = result.SaleID,
                 StockWithdrawal = 1
             };

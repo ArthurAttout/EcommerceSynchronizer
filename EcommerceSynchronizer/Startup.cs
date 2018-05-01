@@ -35,19 +35,44 @@ namespace EcommerceSynchronizer
         {
             services.AddMvc();
 
-            var cfg = new POSConfigurationList();   
-            Configuration.Bind("PosAccess",cfg);
+            var cfg = new POSConfigurationList();
+            Configuration.Bind("PosAccess", cfg);
 
             services.AddSingleton<ApplicationState>();
             services.AddSingleton<Synchronizer>();
             services.AddAutoMapper();
 
-            var posProvider = new POSInterfaceProvider(cfg);
+            services.AddSingleton<Utilities.IConfigurationProvider>(new Utilities.ConfigurationProvider()
+            {
+                DatabaseConnectionString = Configuration["ecommerceDatabaseConnectionString"],
+                FirebaseServerToken = Configuration["FirebaseFCMToken"]
+            });
 
-            services.AddSingleton<IPOSInterfaceProvider>(posProvider);
-            services.AddSingleton<IEcommerceDatabase>(new EcommerceDatabase(Configuration["ecommerceDatabaseConnectionString"],posProvider));
+            services.AddSingleton(cfg);
+            services.AddSingleton<IPOSInterfaceProvider, POSInterfaceProvider>();
+            services.AddSingleton<IEcommerceDatabase, EcommerceDatabase>();
+
             services.AddHangfire(x => x.UseSqlServerStorage(Configuration["hangfireDatabaseConnectionString"]));
 
+        }
+
+        public interface IMyService
+        {
+            string GetConstructorParameter();
+        }
+
+        public class MyService : IMyService
+        {
+            private string connectionString;
+            public MyService(string connString)
+            {
+                this.connectionString = connString;
+            }
+
+            public string GetConstructorParameter()
+            {
+                return connectionString;
+            }
         }
 
         private void createMapping(IMapperConfigurationExpression cfg)
@@ -64,7 +89,7 @@ namespace EcommerceSynchronizer
             }
 
             app.UseMvc();
-            
+
             app.UseHangfireDashboard();
             app.UseHangfireServer();
             using (var connection = JobStorage.Current.GetConnection())

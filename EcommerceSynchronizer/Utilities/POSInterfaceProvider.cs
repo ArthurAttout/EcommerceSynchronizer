@@ -8,6 +8,7 @@ using EcommerceSynchronizer.Model.POSInterfaces;
 using EcommerceSynchronizer.Utilities;
 using Microsoft.AspNetCore.Server.Kestrel.Internal.System.Collections.Sequences;
 using Microsoft.Extensions.Configuration;
+using IConfigurationProvider = EcommerceSynchronizer.Utilities.IConfigurationProvider;
 
 namespace EcommerceSynchronizer.Model
 {
@@ -15,8 +16,9 @@ namespace EcommerceSynchronizer.Model
     {
         private IList<IPOSInterface> _posInterfaces;
 
-        public POSInterfaceProvider(POSConfigurationList configuration)
+        public POSInterfaceProvider(POSConfigurationList configuration, IConfigurationProvider configProvider)
         {
+            
             _posInterfaces = new List<IPOSInterface>();
             foreach(var posCfg in configuration.PosConfigurations)
             {
@@ -32,6 +34,7 @@ namespace EcommerceSynchronizer.Model
                             posCfg.EmailAddress,
                             posCfg.AccountName,
                             posCfg.StoreID,
+                            posCfg.HiboutikCustomerID,
                             posCfg.MaximumRequests));
                         break;
                         
@@ -40,14 +43,19 @@ namespace EcommerceSynchronizer.Model
                             posCfg.RefreshToken,
                             posCfg.ClientID,
                             posCfg.ClientSecret,
+                            posCfg.LightspeedCustomerID,
                             posCfg.AccountID,
                             posCfg.EmployeeID,
                             posCfg.RegisterID,
                             posCfg.ShopID));
                         break;
 
+                    case EnumPOSTypes.MOBILE_CLIENT:
+                        _posInterfaces.Add(new MobileClient(posCfg.AccountID, configProvider.GetFirebaseServerToken(), posCfg.FirebaseFCMID));
+                        break;
+
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        throw new ArgumentOutOfRangeException("Unrecognized POS type");
                 }
             }
         }

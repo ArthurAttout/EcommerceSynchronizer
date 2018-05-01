@@ -9,5 +9,8 @@ namespace EcommerceSynchronizer.Model.POSInterfaces.HiboutikBindingModel
 
         [JsonProperty("currency_code")]
         public string CurrencyCode { get; set; }
+
+        [JsonProperty("customer_id")]
+        public int CustomerID { get; set; }
     }
 }

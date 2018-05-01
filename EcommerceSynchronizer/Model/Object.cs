@@ -16,6 +16,9 @@ namespace EcommerceSynchronizer.Model
 
         public int Quantity { get; set; }
 
+        //If the quantity is lower than this limit, the item won't be sold anymore
+        public int LimitQuantitySale { get; set; }
+
         public IPOSInterface POS { get; set; }
 
         public string Name { get; set; }

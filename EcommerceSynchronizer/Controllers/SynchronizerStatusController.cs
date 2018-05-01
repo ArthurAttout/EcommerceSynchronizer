@@ -68,12 +68,15 @@ namespace EcommerceSynchronizer.Controllers
 
         [Route("api/synchronizer/sale")]
         [HttpPost]
-        public string PostSaleTrigger([FromBody] PostSaleBindingModel model)
+        public PostSaleResponseBindingModel PostSaleTrigger([FromBody] PostSaleBindingModel model)
         {
             if (model?.Delta == null || model.ItemEcommerceId == null || model.BalanceInCents <= 0)
             {
                 Response.StatusCode = 400;
-                return "invalid request. Should provide ItemEcommerceId and delta";
+                return new PostSaleResponseBindingModel()
+                {
+                    ErrorMessage = "invalid request. Should provide ItemEcommerceId and delta"
+                };
             }
 
             var sale = new Sale()
@@ -85,7 +88,9 @@ namespace EcommerceSynchronizer.Controllers
                 },
                 BalanceInCents = model.BalanceInCents
             };
+
             var jobid = BackgroundJob.Enqueue(() => _synchronizer.UpdateFromSale(sale));
+
             var response = new PostSaleResponseBindingModel()
             {
                 Location = jobid,
@@ -93,7 +98,7 @@ namespace EcommerceSynchronizer.Controllers
             };
 
             Response.StatusCode = 202;
-            return JsonConvert.SerializeObject(response);
+            return response;
         }
     }
 
@@ -116,5 +121,8 @@ namespace EcommerceSynchronizer.Controllers
 
         [JsonProperty("location")]
         public string Location { get; set; }
+
+        [JsonProperty("error_message")]
+        public string ErrorMessage { get; set; }
     }
 }

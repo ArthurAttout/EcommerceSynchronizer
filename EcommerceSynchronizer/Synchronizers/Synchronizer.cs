@@ -5,6 +5,7 @@ using System.Linq;
 using EcommerceSynchronizer.Controllers;
 using EcommerceSynchronizer.Model;
 using EcommerceSynchronizer.Model.Interfaces;
+using Hangfire;
 
 namespace EcommerceSynchronizer.Synchronizers
 {
@@ -44,7 +45,7 @@ namespace EcommerceSynchronizer.Synchronizers
         // Triggered when a sale is made on the website
         // -> Update database of POS system based on the sale info
         // -> Update database of website
-
+        [AutomaticRetry(Attempts = 0)]
         public bool UpdateFromSale(Sale sale)
         {
             var objectFromDatabase = _ecommerceDatabase.GetObjectByEcommerceID(sale.Object.EcommerceID);
@@ -55,13 +56,19 @@ namespace EcommerceSynchronizer.Synchronizers
                 posToUpdate.RefreshToken();
                 if (!posToUpdate.CanMakeRequest())
                 {
-                    Console.WriteLine("Could not update POS from sale. POS id : " + posToUpdate.AccountID);
-                    return false;
+                    throw new UnauthorizedAccessException("Could not update POS " + posToUpdate.AccountID);
                 }
             }
-            posToUpdate.AdjustQuantityOfProduct(objectFromDatabase.PosID, sale.QuantitySold, sale.BalanceInCents);
-            objectFromDatabase.Quantity -= sale.QuantitySold;
 
+            if (objectFromDatabase.Quantity - sale.QuantitySold > objectFromDatabase.LimitQuantitySale)
+            {
+                posToUpdate.AdjustQuantityOfProduct(objectFromDatabase, sale.QuantitySold, sale.BalanceInCents);
+                objectFromDatabase.Quantity -= sale.QuantitySold;
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException("Quantity limit has been reached");
+            }
             _ecommerceDatabase.UpdateProduct(objectFromDatabase);
             return true;
         }       

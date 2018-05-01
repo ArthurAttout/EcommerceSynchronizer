@@ -27,9 +27,10 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
         public DateTime DateTokenExpiration { get; set; }
         public string ClientID { get; set; }
         public string AccountID { get; set; }
+        public int CustomerId { get; set; }
         public string ClientSecret { get; set; }
 
-        public LightspeedPOS(string accessToken, string refreshToken, string clientID, string clientSecret, string accountId, int employeeId, int registerId, int shopId)
+        public LightspeedPOS(string accessToken, string refreshToken, string clientID, string clientSecret, int customerID, string accountId, int employeeId, int registerId, int shopId)
         {
             EmployeeId = employeeId;
             RegisterId = registerId;
@@ -37,18 +38,19 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
             AccesssToken = accessToken;
             RefreshToken = refreshToken;
             AccountID = accountId;
+            CustomerId = customerID;
             ClientID = clientID;
             ClientSecret = clientSecret;
         }
 
-        public bool AdjustQuantityOfProduct(string productId, int quantitySold, int balanceInCents)
+        public bool AdjustQuantityOfProduct(Object objectSold, int quantitySold, int balanceInCents)
         {
             var sale = new SalesBindingModel()
             {
                 shopID = ShopId,
                 registerID = RegisterId,
                 employeeID = EmployeeId,
-                customerID = 0,
+                customerID = CustomerId,
                 completed = true,
                 SaleLines = new SaleLines()
                 {
@@ -56,7 +58,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
                     {
                         new SaleLine()
                         {
-                            itemID = int.Parse(productId),
+                            itemID = int.Parse(objectSold.PosID),
                             unitQuantity = quantitySold
                         }
                     })

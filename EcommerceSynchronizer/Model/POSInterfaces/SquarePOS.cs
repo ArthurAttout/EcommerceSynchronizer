@@ -25,7 +25,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public string AccountID { get; set; }
 
-        public bool AdjustQuantityOfProduct(string variationID, int quantitySold, int balance)
+        public bool AdjustQuantityOfProduct(Object objectSold, int quantitySold, int balance)
         {
             var updateBindingModel = new UpdateItemBindingModel()
             {
@@ -33,7 +33,7 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
                 AdjustmentType = "SALE"
             };
 
-            var response = $"https://connect.squareup.com/v1/{AccountID}/inventory/{variationID}"
+            var response = $"https://connect.squareup.com/v1/{AccountID}/inventory/{objectSold.PosID}"
                 .WithHeader("Authorization", $"Bearer {AccessToken}")
                 .PostJsonAsync(updateBindingModel).Result;
 
