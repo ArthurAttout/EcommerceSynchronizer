@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using EcommerceSynchronizer.Model.Interfaces;
 using Flurl.Http;
 using Google.Apis.Auth.OAuth2;
@@ -33,7 +34,15 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
                 {
                     Title = "Une commande a été passée en ligne",
                     Body = $"{objectSold.Name} - Quantité vendue : {quantitySold}"
-                }
+                },
+                data = new Data()
+                {
+                    PosID = objectSold.PosID,
+                    Quantity = quantitySold,
+                    Date = (long) DateTime.UtcNow.ToUniversalTime().Subtract(
+                    new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                        ).TotalMilliseconds
+        }
             };
 
             //Send push notification
@@ -66,11 +75,11 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
         public class SendNotificationBody
         {
-            [JsonProperty("to")]
-            public string DesinationToken { get; set; }
+            [JsonProperty("to")] public string DesinationToken { get; set; }
 
-            [JsonProperty("notification")]
-            public Notification notification { get; set; }
+            [JsonProperty("notification")] public Notification notification { get; set; }
+
+            [JsonProperty("data")] public Data data { get; set; }
         }
 
         public class Notification
@@ -80,6 +89,17 @@ namespace EcommerceSynchronizer.Model.POSInterfaces
 
             [JsonProperty("title")]
             public string Title { get; set; }
+        }
+        public class Data
+        {
+            [JsonProperty("item_pos_id")]
+            public string PosID { get; set; }
+
+            [JsonProperty("quantity")]
+            public int Quantity { get; set; }
+
+            [JsonProperty("date_of_sale")]
+            public long Date { get; set; }
         }
     }
 }

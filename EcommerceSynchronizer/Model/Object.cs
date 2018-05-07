@@ -5,7 +5,7 @@ namespace EcommerceSynchronizer.Model
 {
     public class Object
     {
-        //The ID in the general database 
+        //The ID in the general database         
         public string ID { get; set; }
 
         //The ID that is local to the POS

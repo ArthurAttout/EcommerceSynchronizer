@@ -36,7 +36,7 @@ namespace EcommerceSynchronizer.Controllers
         public string PostStart()
         {
             var jobid = Guid.NewGuid().ToString();
-            RecurringJob.AddOrUpdate(jobid,() => _synchronizer.UpdateFromTimeout(),Cron.Minutely);
+            RecurringJob.AddOrUpdate(jobid,() => _synchronizer.UpdateFromTimeout(), "* 11,12,13 * * 1,2,3,4,5");
 
             _state.SynchronizerJobID = jobid;
             _state.IsSynchronizerRunning = true;
