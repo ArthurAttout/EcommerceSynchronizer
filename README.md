@@ -114,6 +114,20 @@ curl -X POST \
 curl -X POST \
   http://localhost:port/api/synchronizer/stop
 ```
+### Post a new sale
+
+When an item is sold on the e-commerce website, a request must be triggered to dispatch the update on the appropriate POS system
+```
+curl -X POST \
+  http://localhost:port/api/synchronizer/sale \
+  -H 'Cache-Control: no-cache' \
+  -H 'Content-Type: application/json' \
+  -d '{
+	"item_ecommerce_id":{The ID of the item sold},
+	"delta":{The quantity sold},
+	"balance":{The amount in cents paid by the customer}
+}'
+```
 
 ### Monitor the updates with Hangfire
 
@@ -121,7 +135,23 @@ Go to
 ```
 http://localhost:port/hangfire
 ```
+### Change the CRON expression 
 
+The frequency of the updates (polling) is based on a Hangfore CRON expression, which can be changed in the [`SynchronizerStatusController`](https://github.com/ArthurAttout/EcommerceSynchronizer/blob/master/EcommerceSynchronizer/Controllers/SynchronizerStatusController.cs#L39).
+
+The structure of CRON expression used by Hangfire slightly differs from the original CRON. 
+
+```
+field #   meaning        allowed values
+-------   ------------   --------------
+   1      minute         0-59
+   2      hour           0-23
+   3      day of month   1-31
+   4      month          1-12 (or names, see below)
+   5      day of week    0-7 (0 or 7 is Sun, or use names)
+```
+
+I.E. `* 11,12,13 * * 1,2,3,4,5` is every minutes, of 11h,12h and 13h, of monday,tuesday,wednesday,thursday and friday.
 
 ## Built With
 
